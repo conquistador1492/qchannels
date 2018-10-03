@@ -1,0 +1,9 @@
+tokens = [
+    'token'
+]
+
+APItoken = tokens[0]
+
+config = {
+    'url': 'https://quantumexperience.ng.bluemix.net/api'
+}
