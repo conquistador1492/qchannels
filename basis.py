@@ -8,9 +8,9 @@ cr = qk.ClassicalRegister(4)
 qc = qk.QuantumCircuit(qr, cr)
 
 basis = []
+
 def rho0(qr, cr, qc):
     qc.circuit_name = "rho_A0" #where A and 0 stand for type of basics element
-
 def rho1(qr, cr, qc):
     qc.circuit_name = "rho_A1"
     qc.x(qr[0])
@@ -33,15 +33,15 @@ def rho5(qr, cr, qc):
 def rho6(qr, cr, qc):
     rho3(qr, cr, qc)
     qc.circuit_name = "rho_C0"
-    qs.s(qr[0])
+    qc.s(qr[0])
 def rho7(qr, cr, qc):
     rho4(qr, cr, qc)
     qc.circuit_name = "rho_C1"
-    qs.s(qr[3])
+    qc.s(qr[3])
 def rho8(qr, cr, qc):
     rho5(qr, cr, qc)
     qc.circuit_name = "rho_C2"
-    qs.s(qr[0])
+    qc.s(qr[0])
 
 basis.append(rho0)
 basis.append(rho1)
