@@ -2,13 +2,15 @@
 # -*- coding: utf-8 -*-
 
 from Qconfig import config
-from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, execute, IBMQ
+from qiskit import QuantumRegister, ClassicalRegister, execute, IBMQ
 
 from qiskit.tools.qcvv.tomography import *
-from tools import chunks, LOCAL_BACKEND, MAX_JOBS_PER_ONE
+from tools import chunks, MAX_JOBS_PER_ONE
 
 import numpy as np
 import argparse
+
+from landau import LandauCircuit
 
 parser = argparse.ArgumentParser(description='Run experiments on IBM computers')
 parser.add_argument('-n', '--num-token', type=int, default=0, help='Number of token from Qconfig.py')
@@ -22,11 +24,8 @@ if args.token is not None:
 else:
     from Qconfig import tokens
     APItoken = tokens[args.num_token]
-IBMQ.use_account(APItoken, **config)
+IBMQ.enable_account(APItoken, **config)
 
-print(IBMQ.available_backends())
-
-# IBM has bug in backends(), so I use it weird way
 backend = next(filter(lambda backend: backend.configuration().get('name') == args.backend, IBMQ.backends()))
 shots = args.shots
 
@@ -35,11 +34,13 @@ np.set_printoptions(threshold=np.nan)
 num_qubits = 5
 q = QuantumRegister(num_qubits)
 c = ClassicalRegister(num_qubits)
-qc = QuantumCircuit(q, c)
 
-qc.h(q[0])
+circuit_name = 'landau'
+qc = LandauCircuit(q, c, name=circuit_name,
+                   coupling_map=backend.configuration()['coupling_map'])
+qc.circuit_name = circuit_name
 
-tomo_set = tomography_set([0])
+tomo_set = tomography_set([0, 3])
 circuits = create_tomography_circuits(qc, q, c, tomo_set)
 
 res = None

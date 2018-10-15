@@ -2,7 +2,9 @@ import numpy as np
 
 np.set_printoptions(threshold=np.nan)
 
-LOCAL_BACKEND = 'local_qasm_simulator'
+IBMQ_SIMULATOR = 'ibmq_qasm_simulator'
+LOCAL_SIMULATOR = 'local_qasm_simulator'
+SIMULATORS = [IBMQ_SIMULATOR, LOCAL_SIMULATOR]
 MAX_JOBS_PER_ONE = 70
 
 
