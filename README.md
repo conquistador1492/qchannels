@@ -1,4 +1,4 @@
-Run stable_experiment.py for experiments if use QISKIT<=0.5.7, otherwise master_experiment.py
+Run experiment.py
 
 #### Dependencies
 
