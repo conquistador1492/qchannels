@@ -4,15 +4,19 @@
 from Qconfig import config
 from qiskit import QuantumRegister, ClassicalRegister, execute, IBMQ
 from qiskit import QuantumCircuit
-
-from qiskit.tools.qcvv.tomography import *
-from tools import chunks, MAX_JOBS_PER_ONE
+from qiskit.tools.qcvv.tomography import fit_tomography_data, tomography_set, create_tomography_circuits
+from qiskit.tools.qcvv.tomography import tomography_data
 
 import numpy as np
 import argparse
+from copy import copy
+from collections import OrderedDict
 
+from tools import chunks, MAX_JOBS_PER_ONE, SIMULATORS
 from landau import LandauCircuit
 from basis import QUTRIT_BASIS_FUNC
+from theory import get_matrix_from_tomography_to_eij, fidelity, create_theory_choi_matrix
+from theory import get_qutrit_density_matrix_basis, theory_landau_channel
 
 parser = argparse.ArgumentParser(description='Run experiments on IBM computers')
 parser.add_argument('-n', '--num-token', type=int, default=0, help='Number of token from Qconfig.py')
@@ -31,6 +35,9 @@ IBMQ.enable_account(APItoken, **config)
 backend = next(filter(lambda backend: backend.configuration().get('name') == args.backend, IBMQ.backends()))
 shots = args.shots
 
+if args.backend in SIMULATORS:
+    MAX_JOBS_PER_ONE = 10**6  # approximately infinity :)
+
 num_qubits = 5
 circuit_name = 'landau'
 np.set_printoptions(threshold=np.nan)
@@ -47,7 +54,7 @@ for rho_f in QUTRIT_BASIS_FUNC:
     rho_f(q, c, qc)
     qc += LandauCircuit(q, c, name=circuit_name,
                         coupling_map=backend.configuration()['coupling_map'])
-    qc.circuit_name = circuit_name
+    qc.name = circuit_name + '_' + qc.name
     circuits = create_tomography_circuits(qc, q, c, tomo_set)
     jobs.extend(circuits)
 
@@ -67,6 +74,28 @@ for i, part_jobs in enumerate(chunks(jobs, MAX_JOBS_PER_ONE)):
         res += new_res
 
 matrices = []
-for res_chunk in chunks(res, number_measure_experiments):
-    matrices.append(fit_tomography_data(tomography_data(res, qc.name, tomo_set)))
+for i in range(int(len(res)/number_measure_experiments)):
+    initial_state_circuit_name = 'rho_' + ['A', 'B', 'C'][i//3] + str(i % 3)
+    res_matrix = copy(res)
+    res_matrix.results = OrderedDict(zip(
+        list(res_matrix.results.keys())[i*number_measure_experiments:(i+1)*number_measure_experiments],
+        list(res_matrix.results.values())[i*number_measure_experiments:(i+1)*number_measure_experiments]
+    ))
+    matrices.append(fit_tomography_data(tomography_data(
+        res_matrix, circuit_name + '_' + initial_state_circuit_name, tomo_set
+    ))[:3,:3])
 
+
+print('Fidelity of tomography')
+for i, rho in enumerate(get_qutrit_density_matrix_basis()):
+    print(fidelity(theory_landau_channel(rho), matrices[i]))
+print('=======')
+
+matrices = np.array(matrices)
+tomo_to_eij = get_matrix_from_tomography_to_eij()
+eij_matrices = [[None for i in range(3)] for j in range(3)]
+for i in range(3):
+    for j in range(3):
+        eij_matrices[i][j] = np.tensordot(tomo_to_eij[:, 3*i+j], matrices, axes=(0, 0))
+choi_exp = np.block(eij_matrices)/3
+print(fidelity(choi_exp, create_theory_choi_matrix()))

@@ -50,7 +50,7 @@ class LandauCircuit(QuantumCircuit):
         self.cnot(qr[3], qr[2])
 
         self.u3(pi / 4, 0, 0, qr[1])
-        self.u3(pi / 4, 0, 0, qr[2])
+        self.u3(-pi / 4, 0, 0, qr[2])
         self.cnot(qr[2], qr[1])
 
         self.h(qr[0])
