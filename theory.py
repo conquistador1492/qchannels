@@ -59,9 +59,9 @@ def create_theory_choi_matrix(channel=None, dim=DIM):
         channel = theory_landau_channel
 
     blocks = [[None for i in range(dim)] for j in range(dim)]
-    for i in range(3):
-        for j in range(3):
-            rho = np.zeros((3, 3))
+    for i in range(dim):
+        for j in range(dim):
+            rho = np.zeros((dim, dim))
             rho[i,j] = 1
             blocks[i][j] = np.copy(channel(rho))
     return np.block(blocks)/dim
