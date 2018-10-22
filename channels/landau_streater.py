@@ -1,29 +1,42 @@
-from qiskit import QuantumCircuit
+from channels.abstract import AbstractChannelCircuit
+
 from math import pi
+import numpy as np
+
+DIM = 3
+Jx = np.array([
+    [0, 1, 0],
+    [1, 0, 1],
+    [0, 1, 0]
+])/np.sqrt(2)
+Jy = np.array([
+    [0, -1j, 0],
+    [1j, 0, -1j],
+    [0, 1j, 0]
+])/np.sqrt(2)
+Jz = np.diag([1, 0, -1])
+S = np.array([
+    [0, 0, 1],
+    [0, 1, 0],
+    [1, 0, 0]
+])  # 00 -> -1, 01 -> 0, 10 -> 1
 
 
-class LandauCircuit(QuantumCircuit):
-    def cnot(self, a, b):
-        if self.coupling_map == 'all-to-all' or [a[1], b[1]] in self.coupling_map:
-            self.cx(a, b)
-        elif [b[1], a[1]] in self.coupling_map:
-            self.h(a)
-            self.h(b)
-            self.cx(b, a)
-            self.h(a)
-            self.h(a)
-        else:
-            raise Exception(f"We can't put CNOT here. {a[1], b[1]}")
+def theory_landau_streater_channel(rho):
+    global Jx, Jy, Jz
+    rho = S@rho@S
+    return S@(Jx@rho@Jx + Jy@rho@Jy + Jz@rho@Jz)@S/2
 
-    def __init__(self, *regs, name=None, coupling_map=None):
-        super().__init__(*regs, name=name)
-        self.coupling_map = coupling_map
-        self.qr = list(self.get_qregs().values())[0]
-        self.cr = list(self.get_cregs().values())[0]
 
-        self.landau_scheme()
+class LandauStreaterCircuit(AbstractChannelCircuit):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    def landau_scheme(self):
+    @staticmethod
+    def get_theory_channel():
+        return theory_landau_streater_channel
+
+    def create_circuit(self):
         qr, cr = self.qr, self.cr
         self.u2(pi, pi, qr[0])
         self.h(qr[3])

@@ -1,28 +1,40 @@
 #!/usr/bin/env python3.6
 # -*- coding: utf-8 -*-
 
-from Qconfig import config
-from qiskit import QuantumRegister, ClassicalRegister, execute, IBMQ
+import argparse
+from collections import OrderedDict
+from copy import copy
+from importlib import import_module
+import numpy as np
+import re
+
 from qiskit import QuantumCircuit
+from qiskit import QuantumRegister, ClassicalRegister, execute, IBMQ
 from qiskit.tools.qcvv.tomography import fit_tomography_data, tomography_set, create_tomography_circuits
 from qiskit.tools.qcvv.tomography import tomography_data
 
-import numpy as np
-import argparse
-from copy import copy
-from collections import OrderedDict
-
-from tools import chunks, MAX_JOBS_PER_ONE, SIMULATORS
-from landau import LandauCircuit
+from Qconfig import config
 from basis import QUTRIT_BASIS_FUNC
 from theory import get_matrix_from_tomography_to_eij, fidelity, create_theory_choi_matrix
-from theory import get_qutrit_density_matrix_basis, theory_landau_channel
+from theory import get_qutrit_density_matrix_basis
+from tools import chunks, MAX_JOBS_PER_ONE, SIMULATORS
 
-parser = argparse.ArgumentParser(description='Run experiments on IBM computers')
+
+def get_channel_names():
+    channel_class_names = map(lambda x: x.replace('Circuit', ''),
+                              filter(lambda x: 'Circuit' in x and 'AbstractChannel' not in x,
+                                     dir(import_module('channels'))))
+    return list(map(lambda class_name: '-'.join([s for s in re.split("([A-Z][^A-Z]*)", class_name) if s]),
+                    channel_class_names))
+
+
+parser = argparse.ArgumentParser(description='Test Channels')
 parser.add_argument('-n', '--num-token', type=int, default=0, help='Number of token from Qconfig.py')
 parser.add_argument('-t', '--token', default=None, help='Specific token')
 parser.add_argument('-b', '--backend', type=str, default='ibmq_16_melbourne', help='Name of backend (default: %(default)s)')
 parser.add_argument('-s', '--shots', type=int, default=8192, help='Number of shots in experiment')
+parser.add_argument('-c', '--channel', type=str, default='Landau-Streater',
+                    help=f"Name of channel from {get_channel_names()} (default: %(default)s)")
 
 args = parser.parse_args()
 if args.token is not None:
@@ -32,6 +44,10 @@ else:
     APItoken = tokens[args.num_token]
 IBMQ.enable_account(APItoken, **config)
 
+channelClass = getattr(import_module('channels'),
+                       args.channel.replace('-', '') + 'Circuit')
+
+
 backend = next(filter(lambda backend: backend.configuration().get('name') == args.backend, IBMQ.backends()))
 shots = args.shots
 
@@ -39,7 +55,7 @@ if args.backend in SIMULATORS:
     MAX_JOBS_PER_ONE = 10**6  # approximately infinity :)
 
 num_qubits = 5
-circuit_name = 'landau'
+circuit_name = args.channel.lower().replace('-', '_')
 np.set_printoptions(threshold=np.nan)
 q = QuantumRegister(num_qubits)
 c = ClassicalRegister(num_qubits)
@@ -52,8 +68,8 @@ jobs = []
 for rho_f in QUTRIT_BASIS_FUNC:
     qc = QuantumCircuit(q, c)
     rho_f(q, c, qc)
-    qc += LandauCircuit(q, c, name=circuit_name,
-                        coupling_map=backend.configuration()['coupling_map'])
+    qc += channelClass(q, c, name=circuit_name,
+                       coupling_map=backend.configuration()['coupling_map'])
     qc.name = circuit_name + '_' + qc.name
     circuits = create_tomography_circuits(qc, q, c, tomo_set)
     jobs.extend(circuits)
@@ -87,8 +103,9 @@ for i in range(int(len(res)/number_measure_experiments)):
 
 
 print('Fidelity of tomography')
+theory_channel = channelClass.get_theory_channel()
 for i, rho in enumerate(get_qutrit_density_matrix_basis()):
-    print(fidelity(theory_landau_channel(rho), matrices[i]))
+    print(fidelity(theory_channel(rho), matrices[i]))
 print('=======')
 
 matrices = np.array(matrices)
@@ -96,6 +113,6 @@ tomo_to_eij = get_matrix_from_tomography_to_eij()
 eij_matrices = [[None for i in range(3)] for j in range(3)]
 for i in range(3):
     for j in range(3):
-        eij_matrices[i][j] = np.tensordot(tomo_to_eij[:, 3*i+j], matrices, axes=(0, 0))
+        eij_matrices[i][j] = np.tensordot(tomo_to_eij[3*i+j,:], matrices, axes=(0, 0))
 choi_exp = np.block(eij_matrices)/3
-print(fidelity(choi_exp, create_theory_choi_matrix()))
+print(fidelity(choi_exp, create_theory_choi_matrix(theory_channel)))

@@ -1,26 +1,11 @@
 #!/usr/bin/env python3.6
 # -*- coding: utf-8 -*-
 
-import numpy as np
+
 from scipy.linalg import sqrtm
+import numpy as np
 
 DIM = 3
-Jx = np.array([
-    [0, 1, 0],
-    [1, 0, 1],
-    [0, 1, 0]
-])/np.sqrt(2)
-Jy = np.array([
-    [0, -1j, 0],
-    [1j, 0, -1j],
-    [0, 1j, 0]
-])/np.sqrt(2)
-Jz = np.diag([1, 0, -1])
-S = np.array([
-    [0, 0, 1],
-    [0, 1, 0],
-    [1, 0, 0]
-])  # 00 -> -1, 01 -> 0, 10 -> 1
 
 
 def get_state(a, *, dim=None):
@@ -48,16 +33,10 @@ def fidelity(rho1, rho2):
     ))
 
 
-def theory_landau_channel(rho):
-    global Jx, Jy, Jz
-    rho = S@rho@S
-    return S@(Jx@rho@Jx + Jy@rho@Jy + Jz@rho@Jz)@S/2
-
-
-def create_theory_choi_matrix(channel=None, dim=DIM):
-    if channel is None:
-        channel = theory_landau_channel
-
+def create_theory_choi_matrix(channel, dim=DIM):
+    """
+    :param channel: function
+    """
     blocks = [[None for i in range(dim)] for j in range(dim)]
     for i in range(dim):
         for j in range(dim):
@@ -77,7 +56,7 @@ def get_matrix_from_tomography_to_eij(matrices=None):
         for i in range(dim):
             for j in range(dim):
                 ER[3 * i + j, k] = matrix[i, j]
-    return np.linalg.inv(ER)
+    return np.transpose(np.linalg.inv(ER))
 
 if __name__ == '__main__':
     choi = create_theory_choi_matrix()
