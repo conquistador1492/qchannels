@@ -31,10 +31,14 @@ def get_channel_names():
 parser = argparse.ArgumentParser(description='Test Channels')
 parser.add_argument('-n', '--num-token', type=int, default=0, help='Number of token from Qconfig.py')
 parser.add_argument('-t', '--token', default=None, help='Specific token')
-parser.add_argument('-b', '--backend', type=str, default='ibmq_16_melbourne', help='Name of backend (default: %(default)s)')
-parser.add_argument('-s', '--shots', type=int, default=8192, help='Number of shots in experiment')
+parser.add_argument('-b', '--backend', type=str, default='ibmq_16_melbourne',
+                    help='Name of backend (default: %(default)s)')
+parser.add_argument('-s', '--shots', type=int, default=8192,
+                    help='Number of shots in experiment (default: %(default)s)')
 parser.add_argument('-c', '--channel', type=str, default='Landau-Streater',
                     help=f"Name of channel from {get_channel_names()} (default: %(default)s)")
+parser.add_argument('--show-backends', action='store_true',
+                    help='Show available backends(the backend might be on maintenance)')
 
 args = parser.parse_args()
 if args.token is not None:
@@ -43,6 +47,12 @@ else:
     from Qconfig import tokens
     APItoken = tokens[args.num_token]
 IBMQ.enable_account(APItoken, **config)
+
+if args.show_backends:
+    for backend in IBMQ.available_backends():
+        print(backend.name())
+    import sys
+    sys.exit()
 
 channelClass = getattr(import_module('channels'),
                        args.channel.replace('-', '') + 'Circuit')
