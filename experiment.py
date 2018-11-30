@@ -63,7 +63,8 @@ if args.file:
     if not os.path.exists(OUTPUT_DIR):
         os.mkdir(OUTPUT_DIR)
     sys.stdout = open(
-        f"{OUTPUT_DIR}/output_{args.backend}_{datetime.datetime.today().strftime('%Y_%m_%d')}", 'a'
+        f"{OUTPUT_DIR}/output_{args.backend}_{args.channel.lower().replace('-', '_')}_"
+        f"{datetime.datetime.today().strftime('%Y_%m_%d')}", 'a'
     )
 
 channelClass = getattr(import_module('channels'),
