@@ -7,6 +7,9 @@ from copy import copy
 from importlib import import_module
 import numpy as np
 import re
+import sys
+import os
+import datetime
 
 from qiskit import QuantumCircuit
 from qiskit import QuantumRegister, ClassicalRegister, execute, IBMQ
@@ -39,6 +42,8 @@ parser.add_argument('-c', '--channel', type=str, default='Landau-Streater',
                     help=f"Name of channel from {get_channel_names()} (default: %(default)s)")
 parser.add_argument('--show-backends', action='store_true',
                     help='Show available backends(the backend might be on maintenance)')
+parser.add_argument('-f', '--file', action='store_true',
+                    help='Redirect output to file')
 
 args = parser.parse_args()
 if args.token is not None:
@@ -51,8 +56,15 @@ IBMQ.enable_account(APItoken, **config)
 if args.show_backends:
     for backend in IBMQ.available_backends():
         print(backend.name())
-    import sys
     sys.exit()
+
+if args.file:
+    OUTPUT_DIR = 'outputs'
+    if not os.path.exists(OUTPUT_DIR):
+        os.mkdir(OUTPUT_DIR)
+    sys.stdout = open(
+        f"{OUTPUT_DIR}/output_{args.backend}_{datetime.datetime.today().strftime('%Y_%m_%d')}", 'a'
+    )
 
 channelClass = getattr(import_module('channels'),
                        args.channel.replace('-', '') + 'Circuit')
