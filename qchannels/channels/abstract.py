@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
 
-from qiskit import QuantumCircuit, IBMQ, QuantumRegister, ClassicalRegister
+from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, IBMQ, Aer
 
-from qchannels.core.tools import IBMQ_SIMULATOR
+from qchannels.core.tools import LOCAL_SIMULATOR, BACKENDS
 
 
 class AbstractChannelCircuit(ABC, QuantumCircuit):
+    NUM_QUBITS = 5
     @staticmethod
     @abstractmethod
     def get_theory_channel():
@@ -30,14 +31,18 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
         else:
             raise Exception(f"We can't put CNOT here. {a[1], b[1]}")
 
-    def __init__(self, name=None, q_reg=None, c_reg=None,
-                 backend_name=IBMQ_SIMULATOR):
+    def __init__(self, name=None, q_reg=None, c_reg=None, mask=None,
+                 backend_name=LOCAL_SIMULATOR):
         """
-        :param backend_name: str. there is necessary for circuit that depend on topology of backend
+        :param mask: list of int. Circuit for channel can be defined for first qubits and
+         changing mask you can move channel on specific qubits
+         For example, let us suppose, channel is CNOT with zero qubit as control
+         and first as target. If mask is equal to  [1, 2] then first qubit is control and
+         second qubit is target.
+        :param backend_name: str. There is necessary for circuit that depend on topology of backend.
+        :param coupling_map: backend.configuration()['coupling_map'] (default: 'all-to-all')
         """
-        backend = next(filter(
-            lambda backend: backend.name() == backend_name, IBMQ.backends()
-        ))
+        backend = next(filter(lambda backend: backend.name() == backend_name, BACKENDS))
 
         self.coupling_map = backend.configuration()['coupling_map']
         self.backend = backend
@@ -48,7 +53,10 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
         self.create_circuit()
 
     def set_regs(self, q_reg, c_reg):
-        num_qubits = self.backend.configuration()['n_qubits']
+        if self.backend not in Aer.backends():
+            num_qubits = self.backend.configuration()['n_qubits']
+        else:
+            num_qubits = self.NUM_QUBITS
         if q_reg is None:
             self.qr = QuantumRegister(num_qubits)
         else:
