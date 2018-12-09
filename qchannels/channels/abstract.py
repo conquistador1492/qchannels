@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, IBMQ, Aer
 
-from qchannels.core.tools import LOCAL_SIMULATOR, BACKENDS
+from qchannels.core.tools import LOCAL_SIMULATOR, BACKENDS, IBMQ_SIMULATOR
 
 
 class AbstractChannelCircuit(ABC, QuantumCircuit):
@@ -53,7 +53,7 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
         self.create_circuit()
 
     def set_regs(self, q_reg, c_reg):
-        if self.backend not in Aer.backends():
+        if self.backend not in [*Aer.backends(), IBMQ_SIMULATOR]:
             num_qubits = self.backend.configuration()['n_qubits']
         else:
             num_qubits = self.NUM_QUBITS
