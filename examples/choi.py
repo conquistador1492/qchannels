@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from qchannels.core.launcher import Launcher
-
 from qchannels.core.manage_parameters import set_parameters
 
 parameters = set_parameters('Calculate Choi Matrix and fidelity between experiment '

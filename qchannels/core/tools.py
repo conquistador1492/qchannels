@@ -1,11 +1,13 @@
 import numpy as np
+from qiskit import IBMQ, Aer
 
 np.set_printoptions(threshold=np.nan)
 
 IBMQ_SIMULATOR = 'ibmq_qasm_simulator'
-LOCAL_SIMULATOR = 'local_qasm_simulator'
+LOCAL_SIMULATOR = 'qasm_simulator'
 SIMULATORS = [IBMQ_SIMULATOR, LOCAL_SIMULATOR]
 MAX_JOBS_PER_ONE = 70
+BACKENDS = Aer.backends()  # In set_parameters() BACKENDS will be supplemented IBMQ.backends()
 
 
 def chunks(l, n):

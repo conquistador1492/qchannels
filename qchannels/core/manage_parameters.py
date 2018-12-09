@@ -5,10 +5,10 @@ import re
 from importlib import import_module
 import datetime
 
-from qiskit import IBMQ
+from qiskit import IBMQ, Aer
 
 from Qconfig import tokens, config
-from qchannels.core.tools import IBMQ_SIMULATOR
+from qchannels.core.tools import IBMQ_SIMULATOR, BACKENDS
 
 
 class DefaultArgumentParser(argparse.ArgumentParser):
@@ -54,9 +54,12 @@ def set_parameters(description='Test Channels', parser_class=None):
 
     IBMQ.enable_account(token, **config)
     if args.show_backends:
-        for backend in IBMQ.available_backends():
+        for backend in [*IBMQ.available_backends(), *Aer.available_backends()]:
             print(backend.name())
         sys.exit()
+
+    global BACKENDS
+    BACKENDS += IBMQ.backends()
 
     if args.file:
         OUTPUT_DIR = 'outputs'

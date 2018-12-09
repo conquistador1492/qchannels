@@ -1,11 +1,11 @@
 from collections import OrderedDict
 from copy import copy
 
-from qiskit import IBMQ, execute, QuantumCircuit
+from qiskit import execute, QuantumCircuit
 from qiskit.tools.qcvv.tomography import fit_tomography_data, tomography_set
 from qiskit.tools.qcvv.tomography import tomography_data, create_tomography_circuits
 
-from qchannels.core.tools import MAX_JOBS_PER_ONE, SIMULATORS, chunks
+from qchannels.core.tools import MAX_JOBS_PER_ONE, SIMULATORS, BACKENDS, chunks
 
 
 class Launcher:
@@ -14,20 +14,19 @@ class Launcher:
         self.shots = shots
         self.token = token
 
-        self.backend = next(filter(
-            lambda x: x.name() == backend_name, IBMQ.backends()
-        ))
+        self.backend = next(filter(lambda x: x.name() == backend_name, BACKENDS))
 
         if backend_name in SIMULATORS:
             self.max_jobs_per_one = 10**6  # approximately infinity :)
         else:
             self.max_jobs_per_one = MAX_JOBS_PER_ONE
 
-    def run(self, circuits, qubits=None, measure=None):
+    def run(self, circuits, meas_qubits=None, measure=None):
         """
         :param circuits: list of QuantumCircuit or QuantumCircuit
-        :param qubits: list of qubits that will be measured.
+        :param meas_qubits: list of qubits that will be measured.
         :param measure: optional. By default after channel transformation we do tomography.
+        Not implemented now
         :return: depend on measure parameter. By default, it's list of density matrix
         """
         if measure is not None:
@@ -36,14 +35,14 @@ class Launcher:
         if isinstance(circuits, QuantumCircuit):
             circuits = [circuits]
 
-        tomo_set = tomography_set(qubits)
-        number_measure_experiments = 3**len(qubits)
+        tomo_set = tomography_set(meas_qubits)
+        number_measure_experiments = 3**len(meas_qubits)
 
         jobs = []
         for qc in circuits:
             q, c = list(qc.get_qregs().values())[0], list(qc.get_cregs().values())[0]
-            circuits = create_tomography_circuits(qc, q, c, tomo_set)
-            jobs.extend(circuits)
+            tomo_circuits = create_tomography_circuits(qc, q, c, tomo_set)
+            jobs.extend(tomo_circuits)
 
         res = None
         for i, chunk_jobs in enumerate(chunks(jobs, self.max_jobs_per_one)):
@@ -65,9 +64,11 @@ class Launcher:
             res_matrix = copy(res)
             res_matrix.results = OrderedDict(zip(
                 list(res_matrix.results.keys())[
-                i * number_measure_experiments:(i + 1) * number_measure_experiments],
+                    i*number_measure_experiments:(i + 1)*number_measure_experiments
+                ],
                 list(res_matrix.results.values())[
-                i * number_measure_experiments:(i + 1) * number_measure_experiments]
+                    i*number_measure_experiments:(i + 1)*number_measure_experiments
+                ]
             ))
             tomo_data = tomography_data(
                 res_matrix, circuits[i].name, tomo_set
