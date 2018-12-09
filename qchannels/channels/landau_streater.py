@@ -1,7 +1,9 @@
-from channels.abstract import AbstractChannelCircuit
-
 from math import pi
+
 import numpy as np
+
+from qchannels.channels.abstract import AbstractChannelCircuit
+from qchannels.core.tools import SIMULATORS
 
 DIM = 3
 Jx = np.array([
@@ -35,6 +37,24 @@ class LandauStreaterCircuit(AbstractChannelCircuit):
     @staticmethod
     def get_theory_channel():
         return theory_landau_streater_channel
+
+    def set_regs(self, q_reg, c_reg):
+        if self.backend.name() in [*SIMULATORS, 'ibmqx4']:
+            super().set_regs(q_reg, c_reg)
+        else:
+            raise NotImplementedError
+
+    def get_system_qubits(self):
+        if self.backend.name() in [*SIMULATORS, 'ibmqx4']:
+            return [0, 3]
+        else:
+            raise NotImplementedError
+
+    def get_env_qubits(self):
+        if self.backend.name() in [*SIMULATORS, 'ibmqx4']:
+            return [1, 2]
+        else:
+            raise NotImplementedError
 
     def create_circuit(self):
         qr, cr = self.qr, self.cr

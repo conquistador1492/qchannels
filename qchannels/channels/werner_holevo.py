@@ -1,6 +1,9 @@
-from channels.abstract import AbstractChannelCircuit
 from math import pi
+
 import numpy as np
+
+from qchannels.channels.abstract import AbstractChannelCircuit
+from qchannels.core.tools import SIMULATORS
 
 DIM = 3
 
@@ -59,3 +62,15 @@ class WernerHolevoCircuit(AbstractChannelCircuit):
     @staticmethod
     def get_theory_channel():
         return theory_werner_holevo
+
+    def get_system_qubits(self):
+        if self.backend in [*SIMULATORS, 'ibmqx4']:
+            return [0, 3]
+        else:
+            raise NotImplementedError
+
+    def get_env_qubits(self):
+        if self.backend in [*SIMULATORS, 'ibmqx4']:
+            return [1, 2]
+        else:
+            raise NotImplementedError

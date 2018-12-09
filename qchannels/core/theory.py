@@ -28,9 +28,13 @@ def get_qutrit_density_matrix_basis():
 
 
 def fidelity(rho1, rho2):
+    """
+    R. Jozsa, Fidelity for mixed quantum states. J. Modern Opt. 41, 2315–2323 (1994)
+    https://arxiv.org/pdf/quant-ph/0408063.pdf
+    """
     return np.trace(sqrtm(
         sqrtm(rho1)@rho2@sqrtm(rho1)
-    ))
+    ))**2
 
 
 def create_theory_choi_matrix(channel, dim=DIM):
@@ -61,9 +65,9 @@ def get_matrix_from_tomography_to_eij(matrices=None):
 if __name__ == '__main__':
     from importlib import import_module
 
-    module = import_module('channels')
+    module = import_module('qchannels')
     channel_class_names = filter(lambda x: 'Circuit' in x and 'AbstractChannel' not in x, dir(module))
     for class_name in channel_class_names:
-        channelClass = getattr(import_module('channels'), class_name)
+        channelClass = getattr(import_module('qchannels'), class_name)
         choi = create_theory_choi_matrix(channelClass.get_theory_channel())
         assert(0.999 < fidelity(choi, choi) < 1.001)

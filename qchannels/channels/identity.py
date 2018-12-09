@@ -1,4 +1,4 @@
-from channels.abstract import AbstractChannelCircuit
+from qchannels.channels.abstract import AbstractChannelCircuit
 
 
 class IdentityCircuit(AbstractChannelCircuit):
