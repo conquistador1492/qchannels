@@ -5,7 +5,6 @@ from qiskit import IBMQ, execute, QuantumCircuit
 from qiskit.tools.qcvv.tomography import fit_tomography_data, tomography_set
 from qiskit.tools.qcvv.tomography import tomography_data, create_tomography_circuits
 
-from Qconfig import config
 from qchannels.core.tools import MAX_JOBS_PER_ONE, SIMULATORS, chunks
 
 
@@ -15,7 +14,6 @@ class Launcher:
         self.shots = shots
         self.token = token
 
-        IBMQ.enable_account(self.token, **config)
         self.backend = next(filter(
             lambda x: x.name() == backend_name, IBMQ.backends()
         ))
