@@ -31,6 +31,9 @@ def theory_landau_streater_channel(rho):
 
 
 class LandauStreaterCircuit(AbstractChannelCircuit):
+    SYSTEM_QUBITS = [0, 3]
+    ENV_QUBITS = [1, 2]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -41,18 +44,6 @@ class LandauStreaterCircuit(AbstractChannelCircuit):
     def set_regs(self, q_reg, c_reg):
         if self.backend.name() in [*SIMULATORS, 'ibmqx4']:
             super().set_regs(q_reg, c_reg)
-        else:
-            raise NotImplementedError
-
-    def get_system_qubits(self):
-        if self.backend.name() in [*SIMULATORS, 'ibmqx4']:
-            return [0, 3]
-        else:
-            raise NotImplementedError
-
-    def get_env_qubits(self):
-        if self.backend.name() in [*SIMULATORS, 'ibmqx4']:
-            return [1, 2]
         else:
             raise NotImplementedError
 

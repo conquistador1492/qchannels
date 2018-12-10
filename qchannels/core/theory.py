@@ -65,9 +65,9 @@ def get_matrix_from_tomography_to_eij(matrices=None):
 if __name__ == '__main__':
     from importlib import import_module
 
-    module = import_module('qchannels')
+    module = import_module('qchannels.channels')
     channel_class_names = filter(lambda x: 'Circuit' in x and 'AbstractChannel' not in x, dir(module))
     for class_name in channel_class_names:
-        channelClass = getattr(import_module('qchannels'), class_name)
+        channelClass = getattr(import_module('qchannels.channels'), class_name)
         choi = create_theory_choi_matrix(channelClass.get_theory_channel())
         assert(0.999 < fidelity(choi, choi) < 1.001)

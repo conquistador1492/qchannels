@@ -13,6 +13,9 @@ def theory_werner_holevo(rho, dim=DIM):
 
 
 class WernerHolevoCircuit(AbstractChannelCircuit):
+    SYSTEM_QUBITS = [0, 3]
+    ENV_QUBITS = [1, 2]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -60,15 +63,3 @@ class WernerHolevoCircuit(AbstractChannelCircuit):
     @staticmethod
     def get_theory_channel():
         return theory_werner_holevo
-
-    def get_system_qubits(self):
-        if self.backend in [*SIMULATORS, 'ibmqx4']:
-            return [0, 3]
-        else:
-            raise NotImplementedError
-
-    def get_env_qubits(self):
-        if self.backend in [*SIMULATORS, 'ibmqx4']:
-            return [1, 2]
-        else:
-            raise NotImplementedError

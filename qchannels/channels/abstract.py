@@ -14,8 +14,8 @@ class MaskRegister(Register):
     def __getitem__(self, item):
         return super().__getitem__(self.mask.get(item, item))
 
-    def __setitem__(self, key, value):
-        super().__setitem__(self.mask.get(key, key), value)
+    def add_mask(self, mask):
+        pass
 
 
 class MaskQuantumRegister(MaskRegister, QuantumRegister):
@@ -28,6 +28,11 @@ class MaskClassicalRegister(MaskRegister, ClassicalRegister):
 
 class AbstractChannelCircuit(ABC, QuantumCircuit):
     NUM_QUBITS = 5
+
+    # Don't use it directly because it have to be gone though mask.
+    # Call get_system_qubits() and get_env_qubits()
+    SYSTEM_QUBITS = []
+    ENV_QUBITS = []
     @staticmethod
     @abstractmethod
     def get_theory_channel():
@@ -58,7 +63,8 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
             raise Exception(f"We can't put CNOT here. {a[1], b[1]}")
 
     def __init__(self, name=None, q_reg=None, c_reg=None, mask=None,
-                 backend_name=LOCAL_SIMULATOR, num_qubits=None):
+                 backend_name=LOCAL_SIMULATOR, num_qubits=None,
+                 system_qubits=None, env_qubits=None):
         """
         :param mask: dict. Circuit for channel can be defined for first qubits and
          changing mask you can move channel on specific qubits.
@@ -74,7 +80,9 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
 
         self.coupling_map = backend.configuration()['coupling_map']
         self.backend = backend
-        self.mask = mask
+        self.mask = mask if mask is not None else {}
+        self.system_qubits = system_qubits if system_qubits is not None else self.SYSTEM_QUBITS
+        self.env_qubits = env_qubits if env_qubits is not None else self.ENV_QUBITS
 
         if num_qubits is not None:
             self.num_qubits = num_qubits
@@ -82,6 +90,10 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
             self.num_qubits = self.backend.configuration()['n_qubits']
         else:
             self.num_qubits = self.NUM_QUBITS
+
+        if self.mask != {} and max(self.mask.values()) >= self.num_qubits:
+            raise Exception("We can't use qubits over initialized(0 < x < self.num_qubits)")
+
         self.set_regs(q_reg, c_reg)
 
         super().__init__(self.qr, self.cr, name=name)
@@ -96,14 +108,13 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
         """
         Channel consist of system and environmental qubits
         """
-        return [i for i in range(self.qr.size)]
+        return list(map(lambda x: self.qr[x][1], self.SYSTEM_QUBITS))
 
     def get_env_qubits(self):
         """
         Channel consist of system and environmental qubits
         """
-        system_qubits = self.get_system_qubits()
-        return [i for i in range(self.qr.size) if i not in system_qubits]
+        return list(map(lambda x: self.qr[x][1], self.ENV_QUBITS))
 
     def __call__(self, channel):
         """
