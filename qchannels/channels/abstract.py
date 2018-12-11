@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from copy import copy
 
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, Aer
 from qiskit._register import Register
@@ -15,7 +16,20 @@ class MaskRegister(Register):
         return super().__getitem__(self.mask.get(item, item))
 
     def add_mask(self, mask):
-        pass
+        for key in mask:
+            if key in self.mask and self.mask[key] != mask[key]:
+                raise Exception("Outer and inner aren't compatible")
+            self.mask[key] = mask[key]
+
+    def __eq__(self, other):
+        if isinstance(other, Register) and self.size == other.size\
+                and self.name == other.name:
+            return True
+        else:
+            return False
+
+    def __hash__(self):
+        return hash((self.name, self.size))
 
 
 class MaskQuantumRegister(MaskRegister, QuantumRegister):
@@ -101,20 +115,35 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
         self.create_circuit(self.qr, self.cr)
 
     def set_regs(self, q_reg, c_reg):
-        self.qr = MaskQuantumRegister(self.num_qubits, mask=self.mask) if q_reg is None else q_reg
-        self.cr = MaskClassicalRegister(self.num_qubits, mask=self.mask) if c_reg is None else c_reg
+        if q_reg is None:
+            self.qr = MaskQuantumRegister(self.num_qubits, mask=self.mask)
+        else:
+            if not isinstance(q_reg, MaskRegister):
+                self.qr = MaskQuantumRegister(size=q_reg.size, name=q_reg.name, mask=self.mask)
+            else:
+                self.qr = copy(q_reg)
+                self.qr.add_mask(self.mask)
+
+        if c_reg is None:
+            self.cr = MaskClassicalRegister(self.num_qubits, mask=self.mask)
+        else:
+            if not isinstance(c_reg, MaskRegister):
+                self.cr = MaskClassicalRegister(size=c_reg.size, name=c_reg.name, mask=self.mask)
+            else:
+                self.cr = copy(c_reg)
+                self.cr.add_mask(self.mask)
 
     def get_system_qubits(self):
         """
         Channel consist of system and environmental qubits
         """
-        return list(map(lambda x: self.qr[x][1], self.SYSTEM_QUBITS))
+        return list(map(lambda x: self.qr[x][1], self.system_qubits))
 
     def get_env_qubits(self):
         """
         Channel consist of system and environmental qubits
         """
-        return list(map(lambda x: self.qr[x][1], self.ENV_QUBITS))
+        return list(map(lambda x: self.qr[x][1], self.env_qubits))
 
     def __call__(self, channel):
         """
