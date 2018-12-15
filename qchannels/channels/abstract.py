@@ -54,7 +54,7 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
 
     def __init__(self, name=None, q_reg=None, c_reg=None, mask=None,
                  backend_name=LOCAL_SIMULATOR, num_qubits=None,
-                 system_qubits=None, env_qubits=None):
+                 system_qubits=None, env_qubits=None, coupling_map=None):
         """
         :param mask: dict. Circuit for channel can be defined for first qubits and
          changing mask you can move channel on specific qubits.
@@ -68,7 +68,8 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
         """
         backend = next(filter(lambda backend: backend.name() == backend_name, BACKENDS))
 
-        self.coupling_map = backend.configuration()['coupling_map']
+        self.coupling_map = backend.configuration()['coupling_map'] \
+            if coupling_map is None else coupling_map
         self.backend = backend
         self.mask = mask if mask is not None else {}
         self.system_qubits = system_qubits if system_qubits is not None else self.SYSTEM_QUBITS

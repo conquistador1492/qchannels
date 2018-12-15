@@ -8,7 +8,7 @@ import datetime
 from qiskit import IBMQ, Aer
 
 from Qconfig import tokens, config
-from qchannels.core.tools import IBMQ_SIMULATOR, BACKENDS
+from qchannels.core.tools import IBMQ_SIMULATOR
 
 
 class DefaultArgumentParser(argparse.ArgumentParser):
@@ -37,14 +37,18 @@ def get_channel_names():
                     channel_class_names))
 
 
-def set_parameters(description='Test Channels', parser_class=None):
+def set_parameters(description='Test Channels', parser_class=None, additional_argument_list=None):
     """
-    TODO
+    :param additional_argument_list: list of (args, kwargs)
     """
     if parser_class is None:
         parser = DefaultArgumentParser(description=description)
     else:
         parser = parser_class(description=description)
+
+    if additional_argument_list is not None:
+        for additional_argument in additional_argument_list:
+            parser.add_argument(*additional_argument[0], **additional_argument[1])
 
     args = parser.parse_args()
     if args.token is not None:
@@ -72,7 +76,7 @@ def set_parameters(description='Test Channels', parser_class=None):
         )
 
     channel_class = getattr(import_module('qchannels.channels'),
-                           args.channel.replace('-', '') + 'Circuit')
+                            args.channel.replace('-', '') + 'Circuit')
 
     return {
         'token': token,
