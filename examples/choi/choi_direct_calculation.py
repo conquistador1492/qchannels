@@ -6,7 +6,7 @@ from qchannels.core.theory import fidelity, create_theory_choi_matrix
 from qchannels.core.manage_parameters import set_parameters
 from qchannels.core.launcher import Launcher
 from qchannels.channels import IdentityCircuit, QutritSuperpositionCircuit
-from qchannels.core.tools import SIMULATORS
+from qchannels.core.tools import SIMULATORS, BACKENDS
 
 import numpy as np
 
@@ -17,7 +17,12 @@ parameters = set_parameters(
 
 identity_mask = {}
 channel_mask = {i: i+2 for i in range(4)}
-num_qubits = 2*2+2 if parameters['backend_name'] in SIMULATORS else None
+if parameters['backend_name'] in SIMULATORS:
+    num_qubits = 2*2+2
+else:
+    backend = next(filter(lambda backend: backend.name() == parameters['backend_name'], BACKENDS))
+    num_qubits = backend.configuration()['n_qubits']
+
 channel_class = parameters['channel_class']
 
 qr = QuantumRegister(num_qubits)
