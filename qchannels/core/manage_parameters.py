@@ -8,7 +8,7 @@ import datetime
 from qiskit import IBMQ, Aer
 
 from Qconfig import tokens, config
-from qchannels.core.tools import IBMQ_SIMULATOR
+from qchannels.core.tools import IBMQ_SIMULATOR, BACKENDS
 
 
 class DefaultArgumentParser(argparse.ArgumentParser):
