@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from copy import copy
 
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, Aer
 from qiskit._register import Register
@@ -7,37 +6,13 @@ from qiskit._register import Register
 from qchannels.core.tools import LOCAL_SIMULATOR, BACKENDS, IBMQ_SIMULATOR
 
 
-class MaskRegister(Register):
-    def __init__(self, *args, mask=None, **kwargs):
-        super().__init__(*args, **kwargs)
+class MaskRegister:
+    def __init__(self, reg: Register, mask=None):
+        self.reg = reg
         self.mask = mask if mask is not None else {}
 
     def __getitem__(self, item):
-        return super().__getitem__(self.mask.get(item, item))
-
-    def add_mask(self, mask):
-        for key in mask:
-            if key in self.mask and self.mask[key] != mask[key]:
-                raise Exception("Outer and inner aren't compatible")
-            self.mask[key] = mask[key]
-
-    def __eq__(self, other):
-        if isinstance(other, Register) and self.size == other.size\
-                and self.name == other.name:
-            return True
-        else:
-            return False
-
-    def __hash__(self):
-        return hash((self.name, self.size))
-
-
-class MaskQuantumRegister(MaskRegister, QuantumRegister):
-    pass
-
-
-class MaskClassicalRegister(MaskRegister, ClassicalRegister):
-    pass
+        return self.reg, self.mask.get(item, item)
 
 
 class AbstractChannelCircuit(ABC, QuantumCircuit):
@@ -47,6 +22,7 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
     # Call get_system_qubits() and get_env_qubits()
     SYSTEM_QUBITS = []
     ENV_QUBITS = []
+
     @staticmethod
     @abstractmethod
     def get_theory_channel():
@@ -56,7 +32,7 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
         pass
 
     @abstractmethod
-    def create_circuit(self, q_regs, c_regs):
+    def create_circuit(self, q_regs: MaskRegister, c_regs: MaskRegister):
         """
         Built circuit from gates.
         :param q_regs: quantum bits
@@ -112,41 +88,50 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
 
         super().__init__(self.qr, self.cr, name=name)
 
-        self.create_circuit(self.qr, self.cr)
+        self.create_circuit(self.mqr, self.mcr)
 
     def set_regs(self, q_reg, c_reg):
         if q_reg is None:
-            self.qr = MaskQuantumRegister(self.num_qubits, mask=self.mask)
+            self.qr = QuantumRegister(self.num_qubits)
         else:
-            if not isinstance(q_reg, MaskRegister):
-                self.qr = MaskQuantumRegister(size=q_reg.size, name=q_reg.name, mask=self.mask)
-            else:
-                self.qr = copy(q_reg)
-                self.qr.add_mask(self.mask)
+            self.qr = q_reg
 
         if c_reg is None:
-            self.cr = MaskClassicalRegister(self.num_qubits, mask=self.mask)
+            self.cr = ClassicalRegister(self.num_qubits)
         else:
-            if not isinstance(c_reg, MaskRegister):
-                self.cr = MaskClassicalRegister(size=c_reg.size, name=c_reg.name, mask=self.mask)
-            else:
-                self.cr = copy(c_reg)
-                self.cr.add_mask(self.mask)
+            self.cr = c_reg
+
+        self.mqr = MaskRegister(self.qr, mask=self.mask)
+        self.mcr = MaskRegister(self.cr, mask=self.mask)
 
     def get_system_qubits(self):
         """
         Channel consist of system and environmental qubits
         """
-        return list(map(lambda x: self.qr[x][1], self.system_qubits))
+        return list(map(lambda x: self.mask.get(x, x), self.system_qubits))
 
     def get_env_qubits(self):
         """
         Channel consist of system and environmental qubits
         """
-        return list(map(lambda x: self.qr[x][1], self.env_qubits))
+        return list(map(lambda x: self.mask.get(x, x), self.env_qubits))
+
+    # TODO rename
+    def mask_to_real(self, x):
+        return self.mask.get(x, x)
+
+    # TODO rename
+    def real_to_mask(self, x):
+        for key, value in self.mask:
+            if value == x:
+                return key
+        else:
+            return x
 
     def __call__(self, channel):
         """
+        TODO
+
         F1(F2(rho))
         :param channel: AbstractChannelCircuit
         """
@@ -154,6 +139,8 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
 
     def __mul__(self, other):
         """
+        TODO
+
         Tensor product
         """
         raise NotImplementedError
