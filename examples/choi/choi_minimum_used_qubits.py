@@ -8,8 +8,6 @@ from qchannels.core.manage_parameters import set_parameters
 from qchannels.core.theory import get_matrix_from_tomography_to_eij, get_qutrit_density_matrix_basis
 from qchannels.core.theory import fidelity, create_theory_choi_matrix
 
-from qiskit import QuantumCircuit
-
 from basis import preparation_full_set_of_qutrit_density_matrices
 
 parameters = set_parameters('Calculate Choi Matrix and fidelity between experiment '
@@ -20,15 +18,16 @@ channel_mask = {i: i+2 for i in range(4)}
 channel_class = parameters['channel_class']
 channel = channel_class(backend_name=parameters['backend_name'], num_qubits=4)
 
-qc = QuantumCircuit(channel.qr, channel.cr)
 circuits = []
-for circuit in preparation_full_set_of_qutrit_density_matrices(channel.qr, channel.cr, qc):
+for circuit in preparation_full_set_of_qutrit_density_matrices(
+    channel.rel_qr, channel.cr
+):
     circuit += channel
     circuit.name = channel_class.__name__.lower() + '_' + circuit.name
     circuits.append(circuit)
 
 launcher = Launcher(parameters['token'], parameters['backend_name'], parameters['shots'])
-matrices = launcher.run(circuits, channel.get_system_qubits())
+matrices = launcher.run(circuits, channel.system_qubits)
 matrices = list(map(lambda rho: rho[:3,:3], matrices))
 
 print('Fidelity of tomography')

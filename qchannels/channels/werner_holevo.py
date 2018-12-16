@@ -13,8 +13,8 @@ def theory_werner_holevo(rho, dim=DIM):
 
 
 class WernerHolevoCircuit(AbstractChannelCircuit):
-    SYSTEM_QUBITS = [0, 3]
-    ENV_QUBITS = [1, 2]
+    REL_SYSTEM_QUBITS = [0, 3]
+    REL_ENV_QUBITS = [1, 2]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

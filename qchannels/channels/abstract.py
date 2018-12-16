@@ -16,12 +16,20 @@ class MaskRegister:
 
 
 class AbstractChannelCircuit(ABC, QuantumCircuit):
+    """
+    Abstract class for channels. Unitary gates should be written in create_circuit() function.
+    Those registers has relative address and its orders saved in self.rel_system_qubits and
+    self.rel_env_qubits. Real address is written in self.system_qubits and self.env_qubits using
+    mask in __init__ function. E.g. consider Hadamard transformation with mask {0: 5}.
+    In create_circuit() write self.h(q_regs[0]) and self.REL_SYSTEM_QUBITS = [0]. Then instance has
+    self.rel_system_qubits = [0] and self.system_qubits = [5].
+    """
     NUM_QUBITS = 5
 
     # Don't use it directly because it have to be gone though mask.
     # Call get_system_qubits() and get_env_qubits()
-    SYSTEM_QUBITS = []
-    ENV_QUBITS = []
+    REL_SYSTEM_QUBITS = []
+    REL_ENV_QUBITS = []
 
     @staticmethod
     @abstractmethod
@@ -72,8 +80,10 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
             if coupling_map is None else coupling_map
         self.backend = backend
         self.mask = mask if mask is not None else {}
-        self.system_qubits = system_qubits if system_qubits is not None else self.SYSTEM_QUBITS
-        self.env_qubits = env_qubits if env_qubits is not None else self.ENV_QUBITS
+        self.rel_system_qubits = system_qubits if system_qubits is not None else self.REL_SYSTEM_QUBITS
+        self.rel_env_qubits = env_qubits if env_qubits is not None else self.REL_ENV_QUBITS
+        self.system_qubits = list(map(lambda x: self.mask.get(x, x), self.rel_system_qubits))
+        self.env_qubits = list(map(lambda x: self.mask.get(x, x), self.rel_env_qubits))
 
         if num_qubits is not None:
             self.num_qubits = num_qubits
@@ -89,7 +99,7 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
 
         super().__init__(self.qr, self.cr, name=name)
 
-        self.create_circuit(self.mqr, self.mcr)
+        self.create_circuit(self.rel_qr, self.rel_cr)
 
     def set_regs(self, q_reg, c_reg):
         if q_reg is None:
@@ -102,20 +112,8 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
         else:
             self.cr = c_reg
 
-        self.mqr = MaskRegister(self.qr, mask=self.mask)
-        self.mcr = MaskRegister(self.cr, mask=self.mask)
-
-    def get_system_qubits(self):
-        """
-        Channel consist of system and environmental qubits
-        """
-        return list(map(lambda x: self.mask.get(x, x), self.system_qubits))
-
-    def get_env_qubits(self):
-        """
-        Channel consist of system and environmental qubits
-        """
-        return list(map(lambda x: self.mask.get(x, x), self.env_qubits))
+        self.rel_qr = MaskRegister(self.qr, mask=self.mask)
+        self.rel_cr = MaskRegister(self.cr, mask=self.mask)
 
     # TODO rename
     def mask_to_real(self, x):

@@ -20,4 +20,4 @@ class QutritSuperpositionCircuit(AbstractChannelCircuit):
         raise NotImplementedError
 
     NUM_QUBITS = 2
-    SYSTEM_QUBITS = [0, 1]
+    REL_SYSTEM_QUBITS = [0, 1]
