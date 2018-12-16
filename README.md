@@ -23,7 +23,7 @@ class Hadamard(AbstractChannelCircuit):
     @staticmethod
     def get_theory_channel():
         H = np.array([[1, 1], [1, -1]]) / np.sqrt(2)
-        return lambda rho: H * rho * H
+        return lambda rho: H@rho@H
 
 
 parameters = set_parameters('Test Hadamard transformation')
@@ -48,7 +48,15 @@ $ python examples/hadamard.py -b ibmqx4
 More information about arguments:
 ```bash
 $ python examples/hadamard.py --help
-``` 
+```
+Also you can measure fidelity of the channel. Just add:
+```python
+rho = launcher.run(channel, meas_qubits=channel.system_qubits)[0]
+print(fidelity(rho, channel.get_theory_channel()(
+    get_density_matrix_from_state(get_state(0, dim=2))
+)))
+```
+
 
 
 #### Dependencies
