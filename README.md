@@ -60,16 +60,16 @@ print(fidelity(rho, channel.get_theory_channel()(
 
 
 
-#### Dependencies
+### Dependencies
 
 At least [Python 3.6 or later](https://www.python.org/downloads/) is needed
 
-#### Setup your environment
+### Setup your environment
 
 We recommend using python virtual environments to improve your experience. Refer to our
 [Environment Setup documentation](doc/install.rst#3.1-Setup-the-environment) for more information.
 
-#### Installation
+### Installation
 We encourage installing this package via the PIP tool (a python package manager):
 
 ```bash
