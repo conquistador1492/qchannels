@@ -67,7 +67,7 @@ At least [Python 3.6 or later](https://www.python.org/downloads/) is needed
 ### Setup your environment
 
 We recommend using python virtual environments to improve your experience. Refer to our
-[Environment Setup documentation](doc/install.rst#3.1-Setup-the-environment) for more information.
+[Environment Setup documentation](https://virtualenv.pypa.io/en/latest/) for more information.
 
 ### Installation
 We encourage installing this package via the PIP tool (a python package manager):
@@ -82,4 +82,4 @@ pip install package_directory/
 
 ### Instructions
 Add your IBM token to Qconfig.py.example, rename to Qconfig.py
-and move it to directory with the executable file.
+and move it to a directory with the executable file.
