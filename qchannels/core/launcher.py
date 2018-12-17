@@ -77,10 +77,6 @@ class Launcher:
         if isinstance(circuits, QuantumCircuit):
             circuits = [circuits]
 
-        circuits_names = list(map(lambda x: x.name, circuits))
-        if circuits_names != set(circuits_names):
-            raise Exception('IBM call to use different names of circuit')
-
         meas_qubits, s_matrix = sort_list_and_transformation_matrix(meas_qubits)
 
         tomo_set = tomography_set(meas_qubits)
