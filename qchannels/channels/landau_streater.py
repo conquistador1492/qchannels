@@ -41,12 +41,6 @@ class LandauStreaterCircuit(AbstractChannelCircuit):
     def get_theory_channel():
         return theory_landau_streater_channel
 
-    def set_regs(self, q_reg, c_reg):
-        if self.backend.name() in [*SIMULATORS, 'ibmqx4']:
-            super().set_regs(q_reg, c_reg)
-        else:
-            raise NotImplementedError
-
     def create_circuit(self, q_regs, c_regs):
         self.u2(pi, pi, q_regs[0])
         self.h(q_regs[3])

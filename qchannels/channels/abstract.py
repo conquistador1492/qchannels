@@ -96,8 +96,8 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
         else:
             self.num_qubits = max([*self.system_qubits, *self.env_qubits]) + 1
 
-        if self.mask != {} and max(self.mask.values()) >= self.num_qubits:
-            raise Exception("We can't use qubits over initialized(0 < x < self.num_qubits)")
+        if self.mask != {} and max([*self.system_qubits, *self.env_qubits]) >= self.num_qubits:
+            raise Exception(f"We can't use qubits over initialized(0 < x < {self.num_qubits})")
 
         self.set_regs(q_reg, c_reg)
 

@@ -5,7 +5,7 @@ setup(name='qchannels',
       description='More comfortable interface for IBM Quantum Experience',
       author='Alexey Pakhomchik',
       author_email='aleksey.pakhomchik@gmail.com',
-      license='MIT',  # TODO
+      license='',  # TODO
       packages=find_packages(exclude=['test*']),
       install_requires=[
           'qiskit==0.6.1',
