@@ -13,10 +13,10 @@ from basis import preparation_full_set_of_qutrit_density_matrices
 parameters = set_parameters('Calculate Choi Matrix and fidelity between experiment '
                             'and theory prediction')
 
-channel_mask = {i: i+2 for i in range(4)}
+channel_mask = {3: 11, 0: 12, 2: 16, 1: 17}
 
 channel_class = parameters['channel_class']
-channel = channel_class(backend_name=parameters['backend_name'], num_qubits=4)
+channel = channel_class(backend_name=parameters['backend_name'], mask=channel_mask)
 
 circuits = []
 for circuit in preparation_full_set_of_qutrit_density_matrices(

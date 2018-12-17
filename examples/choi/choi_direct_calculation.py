@@ -13,13 +13,13 @@ import numpy as np
 
 # TODO change description
 parameters = set_parameters(
-    'Calculate Choi Matrix and fidelity between experiment and theory prediction',
+    'Calculate Choi Matrix by direct method',
 )
 
-identity_mask = {}
-channel_mask = {i: i+2 for i in range(4)}
+identity_mask = {0: 6, 1: 7}
+channel_mask = {3: 11, 0: 12, 2: 16, 1: 17}
 if parameters['backend_name'] in SIMULATORS:
-    num_qubits = 2*2+2
+    num_qubits = 20
 else:
     backend = next(filter(lambda backend: backend.name() == parameters['backend_name'], BACKENDS))
     num_qubits = backend.configuration()['n_qubits']
@@ -29,15 +29,14 @@ channel_class = parameters['channel_class']
 qr = QuantumRegister(num_qubits)
 cr = ClassicalRegister(num_qubits)
 test_channel = channel_class(backend_name=parameters['backend_name'], mask=channel_mask,
-                             num_qubits=num_qubits, q_reg=qr, c_reg=cr)
+                             q_reg=qr, c_reg=cr)
 identity_channel = IdentityCircuit(backend_name=parameters['backend_name'], mask=identity_mask,
-                                   q_reg=qr, c_reg=cr, system_qubits=[0, 1],
-                                   num_qubits=num_qubits)
+                                   q_reg=qr, c_reg=cr, rel_system_qubits=[0, 1])
 
 preparation_circuit = QutritSuperpositionCircuit(
     backend_name=parameters['backend_name'],
     mask={key: test_channel.system_qubits[key] for key in [0, 1]},
-    q_reg=qr, c_reg=cr, num_qubits=num_qubits
+    q_reg=qr, c_reg=cr
 )
 preparation_circuit.cnot(preparation_circuit.rel_qr[0], identity_channel.rel_qr[0])
 preparation_circuit.cnot(preparation_circuit.rel_qr[1], identity_channel.rel_qr[1])

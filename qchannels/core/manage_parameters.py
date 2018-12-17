@@ -1,9 +1,5 @@
-import argparse
-import sys
-import os
-import re
+import sys, os, re, argparse, datetime
 from importlib import import_module
-import datetime
 
 from qiskit import IBMQ, Aer
 
@@ -66,14 +62,15 @@ def set_parameters(description='Test Channels', parser_class=None, additional_ar
     BACKENDS += IBMQ.backends()
 
     if args.file:
-        OUTPUT_DIR = 'outputs'
-        if not os.path.exists(OUTPUT_DIR):
-            os.mkdir(OUTPUT_DIR)
-        sys.stdout = open(
-            f"{OUTPUT_DIR}/output_change_fidelity_post_selection_"
-            f"{args.backend}_{args.channel.lower().replace('-', '_')}_"
-            f"{datetime.datetime.today().strftime('%Y_%m_%d')}", 'a'
-        )
+        exec_file = os.path.basename(sys.argv[0])[:-3]
+        output_dir = 'outputs'
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+        filename = f"{output_dir}/output_{exec_file}_" \
+            f"{args.backend}_{args.channel.lower().replace('-', '_')}_" \
+            f"{datetime.datetime.today().strftime('%Y_%m_%d')}"
+        sys.stdout = open(filename, 'a')
+        sys.stderr = open(filename, 'a')
 
     channel_class = getattr(import_module('qchannels.channels'),
                             args.channel.replace('-', '') + 'Circuit')

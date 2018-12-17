@@ -1,11 +1,53 @@
 from collections import OrderedDict
 from copy import copy
+import numpy as np
+from itertools import product
 
 from qiskit import execute, QuantumCircuit
 from qiskit.tools.qcvv.tomography import fit_tomography_data, tomography_set
 from qiskit.tools.qcvv.tomography import tomography_data, create_tomography_circuits
 
 from qchannels.core.tools import MAX_JOBS_PER_ONE, SIMULATORS, BACKENDS, chunks
+
+
+def sort_list_and_transformation_matrix(a):
+    """
+    There is to sorts qubit. Also, it returns S matrix for changed density matrix
+    :param a: list
+    :return: (list, np.array(2**len(a), 2**len(a)))
+    """
+    length = len(a)
+    S = np.eye(2**length, 2**length)
+    b = copy(a)
+    # bubble sort
+    for i in range(length):
+        for j in range(length-i-1):
+            if b[j] > b[j+1]:
+                b[j], b[j+1] = b[j+1], b[j]
+
+                # TODO It's slow. Change it, please
+                step_matrix = np.eye(2**length, 2**length)
+                for digits in product([0, 1], repeat=length):
+                    if digits[j] == digits[j+1]:
+                        continue
+
+                    first_number = sum([bit*2**n for n, bit in enumerate(digits)])
+                    second_number = 0
+                    for n, bit in enumerate(digits):
+                        if n == j:
+                            second_number += bit*2**(j+1)
+                        elif n == j + 1:
+                            second_number += bit*2**j
+                        else:
+                            second_number += bit*2**n
+
+                    step_matrix[first_number, second_number] = 1
+                    step_matrix[second_number, first_number] = 1
+                    step_matrix[first_number, first_number] = 0
+                    step_matrix[second_number, second_number] = 0
+
+                S = step_matrix@S
+    return b, S
 
 
 class Launcher:
@@ -21,7 +63,7 @@ class Launcher:
         else:
             self.max_jobs_per_one = MAX_JOBS_PER_ONE
 
-    def run(self, circuits, meas_qubits=None, measure=None):
+    def run(self, circuits, meas_qubits=None, measure=None, count_chunks=False):
         """
         :param circuits: list of QuantumCircuit or QuantumCircuit
         :param meas_qubits: list of qubits that will be measured.
@@ -35,6 +77,12 @@ class Launcher:
         if isinstance(circuits, QuantumCircuit):
             circuits = [circuits]
 
+        circuits_names = list(map(lambda x: x.name, circuits))
+        if circuits_names != set(circuits_names):
+            raise Exception('IBM call to use different names of circuit')
+
+        meas_qubits, s_matrix = sort_list_and_transformation_matrix(meas_qubits)
+
         tomo_set = tomography_set(meas_qubits)
         number_measure_experiments = 3**len(meas_qubits)
 
@@ -46,7 +94,8 @@ class Launcher:
 
         res = None
         for i, chunk_jobs in enumerate(chunks(jobs, self.max_jobs_per_one)):
-            print(f'chunk number: {i + 1}')
+            if count_chunks:
+                print(f'chunk number: {i + 1}')
             execute_kwargs = {
                 'circuits': chunk_jobs,
                 'backend': self.backend,
@@ -73,7 +122,7 @@ class Launcher:
             tomo_data = tomography_data(
                 res_matrix, circuits[i].name, tomo_set
             )
-            rho = fit_tomography_data(tomo_data)
+            rho = np.linalg.inv(s_matrix)@fit_tomography_data(tomo_data)@s_matrix
             matrices.append(rho)
         return matrices
 

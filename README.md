@@ -6,6 +6,7 @@ tomography. Also, it has ui interface for quick change different backends.
 
 For example, consider Hadamard transformation.
 Built the channel and make tomography
+(using `mask` you can place it on different qubit without channel code changing)
 ```python
 from qchannels.channels.abstract import AbstractChannelCircuit
 from qchannels.core.manage_parameters import set_parameters
