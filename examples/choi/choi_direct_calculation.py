@@ -22,7 +22,7 @@ if parameters['backend_name'] in SIMULATORS:
     num_qubits = 20
 else:
     backend = next(filter(lambda backend: backend.name() == parameters['backend_name'], BACKENDS))
-    num_qubits = backend.configuration()['n_qubits']
+    num_qubits = backend.configuration().n_qubits
 
 channel_class = parameters['channel_class']
 

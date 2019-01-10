@@ -8,7 +8,7 @@ setup(name='qchannels',
       license='',  # TODO
       packages=find_packages(exclude=['test*']),
       install_requires=[
-          'qiskit==0.6.1',
+          'qiskit==0.7.0',
           'jsonschema>=2.6.0',
           'psutil>=5.4.7'
       ],

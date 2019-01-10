@@ -84,7 +84,7 @@ class Launcher:
 
         jobs = []
         for qc in circuits:
-            q, c = list(qc.get_qregs().values())[0], list(qc.get_cregs().values())[0]
+            q, c = qc.qregs[0], qc.cregs[0]
             tomo_circuits = create_tomography_circuits(qc, q, c, tomo_set)
             jobs.extend(tomo_circuits)
 
@@ -105,16 +105,11 @@ class Launcher:
                 res += new_res
 
         matrices = []
-        for i in range(int(len(res) / number_measure_experiments)):
+        for i in range(int(len(res.results) / number_measure_experiments)):
             res_matrix = copy(res)
-            res_matrix.results = OrderedDict(zip(
-                list(res_matrix.results.keys())[
-                    i*number_measure_experiments:(i + 1)*number_measure_experiments
-                ],
-                list(res_matrix.results.values())[
-                    i*number_measure_experiments:(i + 1)*number_measure_experiments
-                ]
-            ))
+            res_matrix.results = res.results[
+                i*number_measure_experiments:(i + 1)*number_measure_experiments
+            ]
             tomo_data = tomography_data(
                 res_matrix, circuits[i].name, tomo_set
             )

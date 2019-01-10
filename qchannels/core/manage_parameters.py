@@ -4,7 +4,7 @@ from importlib import import_module
 from qiskit import IBMQ, Aer
 
 from Qconfig import tokens, config
-from qchannels.core.tools import IBMQ_SIMULATOR, BACKENDS
+from qchannels.core.tools import IBMQ_SIMULATOR, BACKENDS, LOCAL_SIMULATOR
 
 
 class DefaultArgumentParser(argparse.ArgumentParser):
@@ -13,7 +13,7 @@ class DefaultArgumentParser(argparse.ArgumentParser):
         self.add_argument('-n', '--num-token', type=int, default=0,
                           help='Number of token from Qconfig.py')
         self.add_argument('-t', '--token', default=None, help='Specific token')
-        self.add_argument('-b', '--backend', type=str, default=IBMQ_SIMULATOR,
+        self.add_argument('-b', '--backend', type=str, default=LOCAL_SIMULATOR,
                           help='Name of backend (default: %(default)s)')
         self.add_argument('-s', '--shots', type=int, default=8192,
                           help='Number of shots in experiment (default: %(default)s)')
@@ -53,13 +53,13 @@ def set_parameters(description='Test Channels', parser_class=None, additional_ar
         token = tokens[args.num_token]
 
     IBMQ.enable_account(token, **config)
-    if args.show_backends:
-        for backend in [*IBMQ.available_backends(), *Aer.available_backends()]:
-            print(backend.name())
-        sys.exit()
 
     global BACKENDS
     BACKENDS += IBMQ.backends()
+    if args.show_backends:
+        for backend in BACKENDS:
+            print(backend.name())
+        sys.exit()
 
     if args.file:
         exec_file = os.path.basename(sys.argv[0])[:-3]

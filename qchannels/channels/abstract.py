@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, Aer
-from qiskit._register import Register
+from qiskit.circuit.register import Register
 
 from qchannels.core.tools import LOCAL_SIMULATOR, BACKENDS, IBMQ_SIMULATOR
 
@@ -48,7 +48,7 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
         pass
 
     def cnot(self, a, b):
-        if self.coupling_map == 'all-to-all' or [a[1], b[1]] in self.coupling_map:
+        if self.coupling_map is None or [a[1], b[1]] in self.coupling_map:
             self.cx(a, b)
         elif [b[1], a[1]] in self.coupling_map:
             self.h(a)
@@ -75,7 +75,7 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
         """
         backend = next(filter(lambda backend: backend.name() == backend_name, BACKENDS))
 
-        self.coupling_map = backend.configuration()['coupling_map'] \
+        self.coupling_map = getattr(backend.configuration(), 'coupling_map', None) \
             if coupling_map is None else coupling_map
         self.backend = backend
         self.mask = mask if mask is not None else {}
@@ -92,7 +92,7 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
             elif isinstance(q_reg, MaskRegister):
                 self.num_qubits = q_reg.reg.size
         elif self.backend not in Aer.backends() and self.backend.name() != IBMQ_SIMULATOR:
-            self.num_qubits = self.backend.configuration()['n_qubits']
+            self.num_qubits = self.backend.configuration().n_qubits
         else:
             self.num_qubits = max([*self.system_qubits, *self.env_qubits]) + 1
 
