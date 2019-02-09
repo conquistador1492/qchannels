@@ -56,14 +56,14 @@ def fidelity(rho1, rho2):
     ))**2
 
 
-def create_theory_choi_matrix(channel, dim=DIM):
+def create_choi_matrix_from_channel(channel, dim=DIM):
     """
     Building choi matrix C = (Id * Channel) (|psi+><psi+|)
     https://journals.aps.org/pra/abstract/10.1103/PhysRevA.87.022310
     :param channel: function
     >>> identity_channel = lambda rho: rho
     >>> np.array_equal(
-    ...     create_theory_choi_matrix(identity_channel, dim=2),
+    ...     create_choi_matrix_from_channel(identity_channel, dim=2),
     ...     np.array([
     ...         [1, 0, 0, 1],
     ...         [0, 0, 0, 0],
@@ -76,10 +76,42 @@ def create_theory_choi_matrix(channel, dim=DIM):
     blocks = [[None for i in range(dim)] for j in range(dim)]
     for i in range(dim):
         for j in range(dim):
-            rho = np.zeros((dim, dim))
+            rho = np.zeros((dim, dim), dtype=complex)
             rho[i,j] = 1
             blocks[i][j] = np.copy(channel(rho))
     return np.block(blocks)/dim
+
+
+def partial_trace_with_halves(Rho, half):
+    if np.sqrt(Rho.shape[0]) != int(np.sqrt(Rho.shape[0])):
+        raise TypeError('Density matrix must have dimension that equal to n**2 x n**2')
+
+    channel_dim = int(np.sqrt(Rho.shape[0]))
+
+    output_rho = np.zeros((channel_dim, channel_dim), dtype=complex)
+    if half == 1:
+        for i in range(channel_dim):
+            for j in range(channel_dim):
+                for k in range(channel_dim):
+                    output_rho[i,j] += Rho[i*channel_dim + k, j*channel_dim + k]
+    elif half == 2:
+        for i in range(channel_dim):
+            for j in range(channel_dim):
+                for k in range(channel_dim):
+                    output_rho[i,j] += Rho[i + k*channel_dim, j + k*channel_dim]
+    return output_rho
+
+
+def create_channel_from_choi_matrix(choi):
+    if np.sqrt(choi.shape[0]) != int(np.sqrt(choi.shape[0])):
+        raise TypeError('Choi matrix must have dimension that equal to n**2 x n**2')
+
+    channel_dim = int(np.sqrt(choi.shape[0]))
+
+    def _channel(rho):
+        mat = channel_dim*np.kron(rho.transpose(), np.eye(channel_dim, dtype=complex))@choi
+        return partial_trace_with_halves(mat, 2)
+    return _channel
 
 
 def get_matrix_from_tomography_to_eij(matrices=None):
@@ -120,7 +152,7 @@ if __name__ == '__main__':
     for class_name in channel_class_names:
         channelClass = getattr(import_module('qchannels.channels'), class_name)
         try:
-            choi = create_theory_choi_matrix(channelClass.get_theory_channel())
+            choi = create_choi_matrix_from_channel(channelClass.get_theory_channel())
         except NotImplementedError:
             pass
         assert(0.999 < fidelity(choi, choi) < 1.001)

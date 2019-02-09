@@ -10,6 +10,9 @@ setup(name='qchannels',
       install_requires=[
           'qiskit==0.7.0',
           'jsonschema>=2.6.0',
-          'psutil>=5.4.7'
+          'psutil>=5.4.7',
+          'nose'
       ],
+      test_suite='nose.collector',
+      tests_require=['nose'],
       zip_safe=False)
