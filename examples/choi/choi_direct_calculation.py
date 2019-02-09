@@ -3,7 +3,7 @@
 
 from qiskit import QuantumRegister, ClassicalRegister
 
-from qchannels.core.theory import fidelity, create_theory_choi_matrix
+from qchannels.core.theory import fidelity, create_choi_matrix_from_channel
 from qchannels.core.manage_parameters import set_parameters
 from qchannels.core.launcher import Launcher
 from qchannels.channels import IdentityCircuit, QutritSuperpositionCircuit
@@ -16,11 +16,14 @@ parameters = set_parameters(
     'Calculate Choi Matrix by direct method',
 )
 
-identity_mask = {0: 6, 1: 7}
-channel_mask = {3: 11, 0: 12, 2: 16, 1: 17}
 if parameters['backend_name'] in SIMULATORS:
-    num_qubits = 20
+    # Increase speed on simulation
+    identity_mask = {0: 0, 1: 1}
+    channel_mask = {3: 2, 0: 3, 2: 7, 1: 8}
+    num_qubits = max([*identity_mask.values(), *channel_mask.values()]) + 1
 else:
+    identity_mask = {0: 6, 1: 7}
+    channel_mask = {3: 11, 0: 12, 2: 16, 1: 17}
     backend = next(filter(lambda backend: backend.name() == parameters['backend_name'], BACKENDS))
     num_qubits = backend.configuration().n_qubits
 
@@ -49,4 +52,4 @@ choi = launcher.run(circuit, meas_qubits=identity_channel.system_qubits +
 choi = np.delete(choi, [3, 7, 11, 15, 12, 13, 14], 0)
 choi = np.delete(choi, [3, 7, 11, 15, 12, 13, 14], 1)
 
-print(fidelity(choi, create_theory_choi_matrix(channel_class.get_theory_channel())))
+print(fidelity(choi, create_choi_matrix_from_channel(channel_class.get_theory_channel())))
