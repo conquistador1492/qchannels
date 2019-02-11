@@ -51,5 +51,8 @@ choi = launcher.run(circuit, meas_qubits=identity_channel.system_qubits +
 
 choi = np.delete(choi, [3, 7, 11, 15, 12, 13, 14], 0)
 choi = np.delete(choi, [3, 7, 11, 15, 12, 13, 14], 1)
+choi = choi / np.trace(choi)
 
-print(fidelity(choi, create_choi_matrix_from_channel(channel_class.get_theory_channel())))
+print(f"choi matrix: {choi}")
+print(f"fidelity between theoretical expectation and the experiment "
+      f"{fidelity(choi, create_choi_matrix_from_channel(channel_class.get_theory_channel()))}")

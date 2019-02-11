@@ -4,6 +4,7 @@ import numpy as np
 from itertools import product
 
 from qiskit import execute, QuantumCircuit
+from qiskit.tools.monitor import job_monitor
 from qiskit.tools.qcvv.tomography import fit_tomography_data, tomography_set
 from qiskit.tools.qcvv.tomography import tomography_data, create_tomography_circuits
 
@@ -98,7 +99,11 @@ class Launcher:
                 'shots': self.shots,
                 'max_credits': 15
             }
-            new_res = execute(**execute_kwargs).result()
+
+            job_exp = execute(**execute_kwargs)
+            job_monitor(job_exp)
+            new_res = job_exp.result()
+
             if res is None:
                 res = new_res
             else:
