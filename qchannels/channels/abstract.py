@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, Aer
+from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, BasicAer
 from qiskit.circuit.register import Register
 
 from qchannels.core.tools import LOCAL_SIMULATOR, BACKENDS, IBMQ_SIMULATOR
@@ -91,7 +91,7 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
                 self.num_qubits = q_reg.size
             elif isinstance(q_reg, MaskRegister):
                 self.num_qubits = q_reg.reg.size
-        elif self.backend not in Aer.backends() and self.backend.name() != IBMQ_SIMULATOR:
+        elif self.backend not in BasicAer.backends() and self.backend.name() != IBMQ_SIMULATOR:
             self.num_qubits = self.backend.configuration().n_qubits
         else:
             self.num_qubits = max([*self.system_qubits, *self.env_qubits]) + 1

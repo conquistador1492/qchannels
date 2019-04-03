@@ -1,7 +1,7 @@
 import sys, os, re, argparse, datetime
 from importlib import import_module
 
-from qiskit import IBMQ, Aer
+from qiskit import IBMQ, BasicAer
 
 from Qconfig import tokens, config
 from qchannels.core.tools import IBMQ_SIMULATOR, BACKENDS, LOCAL_SIMULATOR
