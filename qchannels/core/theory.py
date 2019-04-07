@@ -88,7 +88,15 @@ def partial_trace_with_halves(Rho, half):
 
     channel_dim = int(np.sqrt(Rho.shape[0]))
 
-    output_rho = np.zeros((channel_dim, channel_dim), dtype=complex)
+    from sympy import MatrixBase
+    if isinstance(Rho, (np.ndarray, np.generic)):
+        output_rho = np.zeros((channel_dim, channel_dim), dtype=complex)
+    elif isinstance(Rho, MatrixBase):
+        from sympy import zeros
+        output_rho = zeros(channel_dim)
+    else:
+        raise TypeError('Unknown type of Rho')
+
     if half == 1:
         for i in range(channel_dim):
             for j in range(channel_dim):

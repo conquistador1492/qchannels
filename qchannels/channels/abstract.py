@@ -131,6 +131,8 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
         else:
             return x
 
+    # TODO implement add, create new class for addition
+
     def __call__(self, channel):
         """
         TODO

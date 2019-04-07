@@ -8,10 +8,11 @@ setup(name='qchannels',
       license='',  # TODO
       packages=find_packages(exclude=['test*']),
       install_requires=[
-          'qiskit==0.8.0',
-          'jsonschema>=2.6.0',
+          'qiskit-terra==0.7.1',
+          'qiskit==0.7.0',
           'psutil>=5.4.7',
-          'nose'
+          'nose',
+          'sympy'
       ],
       test_suite='nose.collector',
       tests_require=['nose'],
