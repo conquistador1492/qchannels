@@ -2,7 +2,8 @@ from unittest import TestCase
 import numpy as np
 from qchannels.core.theory import create_channel_from_choi_matrix, partial_trace_with_halves
 from qchannels.core.theory import get_qutrit_density_matrix_basis
-from qchannels.core.theory import create_choi_matrix_from_channel
+from qchannels.core.theory import create_choi_matrix_from_channel, get_kraus_operators_from_choi
+from qchannels.channels.identity import IdentityCircuit
 
 
 class TestTheory(TestCase):
@@ -105,3 +106,52 @@ class TestTheory(TestCase):
                     msg=f"\n{new_channel(rho)}\n {channel(rho)}\n gate: {gate}\n"
                         f"initial state: {rho}\n choi: {choi}"
                 )
+
+    def assertKrausOperators(self, a, b):
+        self.assertEqual(len(a), len(b))
+        for i, array in enumerate(b):
+            self.assertNumpyArrayAlmostEqual(a[i], b[i])
+
+    def test_get_kraus_operators_from_choi(self):
+        CNOT = np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 0, 1],
+            [0, 0, 1, 0]
+        ])
+        cnot_channel = lambda rho: CNOT@rho@CNOT
+
+        choi = create_choi_matrix_from_channel(cnot_channel, dim=4)
+        krauses = get_kraus_operators_from_choi(choi)
+        theory_krauses = [CNOT]
+
+        self.assertKrausOperators(krauses, theory_krauses)
+
+        krauses = get_kraus_operators_from_choi(create_choi_matrix_from_channel(
+            IdentityCircuit.get_theory_channel(), dim=4
+        ))
+        theory_krauses = [np.eye(4)]
+
+        self.assertKrausOperators(krauses, theory_krauses)
+
+        n_X, n_Y, n_Z = np.array([[0, 1], [1, 0]]), np.array([[0, -1j], [1j, 0]]), np.diag([1, -1])
+        for pauli in [n_X, n_Y, n_Z]:
+            krauses = get_kraus_operators_from_choi(create_choi_matrix_from_channel(
+                lambda rho: pauli@rho@np.conj(pauli.T), dim=2
+            ))
+            theory_krauses = [pauli]
+            try:
+                self.assertKrausOperators(krauses, theory_krauses)
+            except AssertionError:
+                self.assertKrausOperators(krauses, list(map(lambda x: -x, theory_krauses)))
+
+        krauses = get_kraus_operators_from_choi(create_choi_matrix_from_channel(
+            lambda rho: (n_X@rho@np.conj(n_X.T) + n_Z@rho@np.conj(n_Z.T))/2, dim=2
+        ))
+        theory_krauses = [n_Z/np.sqrt(2), n_X/np.sqrt(2)]
+        try:
+            self.assertKrausOperators(krauses, theory_krauses)
+        except AssertionError:
+            print(krauses)
+            raise
+

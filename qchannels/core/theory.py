@@ -4,6 +4,7 @@
 
 from scipy.linalg import sqrtm
 import numpy as np
+from cmath import sqrt
 
 DIM = 3
 
@@ -80,6 +81,60 @@ def create_choi_matrix_from_channel(channel, dim=DIM):
             rho[i,j] = 1
             blocks[i][j] = np.copy(channel(rho))
     return np.block(blocks)/dim
+
+
+def get_kraus_operators_from_choi(choi):
+    """
+    https://quantumcomputing.stackexchange.com/questions/5804/vectorization-map-to-dynamical-map
+
+    :param choi:
+    :return:
+    """
+    dim = int(np.sqrt(choi.shape[0]))
+
+    # TODO Workaround
+    if np.abs(np.trace(choi) - 1) < 10**(-2):
+        choi *= dim
+
+    eigenvalues, eigenvects = np.linalg.eig(choi)
+    if (np.imag(eigenvalues) > 10**(-3)*np.max(np.abs(eigenvalues))).any():
+        raise Exception('The Choi matrix has to be hermitian')
+    eigenvalues = np.real(eigenvalues)
+
+    for i, a in enumerate(eigenvects.T):
+        for j, b in enumerate(eigenvects.T):
+            if np.abs(np.conj(a.T)@b - (1 if i == j else 0)) > 10**(-3):
+                raise NotImplementedError('Numpy returned non-orthogonal vectors')
+
+    kraus_operators = []
+    if int(np.sqrt(choi.shape[0])) != np.sqrt(choi.shape[0]):
+        raise TypeError('The Choi matrix must have dimension that equal to n**2 x n**2')
+
+    max_abs_eigenvalue = np.max(np.abs(eigenvalues))
+    for i, value in enumerate(eigenvalues):
+        if np.abs(value) < 10**(-3)*max_abs_eigenvalue:
+            continue
+
+        matrix = sqrt(value)*eigenvects.T[i].reshape((dim, dim))
+        if not np.allclose(matrix, np.conj(matrix.T), atol=1e-3):
+            # Try to make hermitian
+            exit = False
+            for i in range(matrix.shape[0]):
+                if exit:
+                    break
+
+                for j in range(i + 1, matrix.shape[0]):
+                    if (np.abs(matrix[i, j]) < 1e-3 < np.abs(matrix[j, i])) or \
+                            (np.abs(matrix[i, j]) > 1e-3 > np.abs(matrix[j, i])):
+                        exit = True; break
+                    elif np.abs(matrix[i, j]) < 1e-3 and np.abs(matrix[j, i]) < 1e-3:
+                        continue
+                    else:
+                        matrix *= -sqrt(np.conj(matrix[j, i])/matrix[i, j])
+                        exit = True; break
+
+        kraus_operators.append(matrix)
+    return kraus_operators if len(kraus_operators) > 0 else [np.eye(dim)]
 
 
 def partial_trace_with_halves(Rho, half):
