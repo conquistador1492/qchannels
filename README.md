@@ -1,4 +1,4 @@
-This package is a library of algorithms for quantum computing
+This package is a library for quantum computing
 that uses [Qiskit Terra](https://qiskit.org/terra) to build out, compile and run quantum circuits.
 It allows create quantum channels, easy move it through qubits and make
 tomography. Also, it has ui interface for quick change different backends.
