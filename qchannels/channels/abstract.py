@@ -17,7 +17,7 @@ class MaskRegister:
 
 class AbstractChannelCircuit(ABC, QuantumCircuit):
     """
-    Abstract class for channels. Unitary gates should be written in create_circuit() function.
+    Abstract class for quantum channels. Unitary gates should be written in create_circuit() function.
     Those registers have a relative address and its orders saved in self.rel_system_qubits and
     self.rel_env_qubits. The real address is written in self.system_qubits and
     self.env_qubits using mask in __init__ function.
@@ -39,7 +39,7 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
         raise NotImplementedError
 
     @abstractmethod
-    def create_circuit(self, q_regs: MaskRegister, c_regs: MaskRegister):
+    def create_circuit(self, q_regs: MaskRegister):
         """
         Built circuit from gates.
         :param q_regs: quantum bits
@@ -99,25 +99,19 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
         if self.mask != {} and max([*self.system_qubits, *self.env_qubits]) >= self.num_qubits:
             raise Exception(f"We can't use qubits over initialized(0 < x < {self.num_qubits})")
 
-        self.set_regs(q_reg, c_reg)
+        self.set_regs(q_reg)
 
-        super().__init__(self.qr, self.cr, name=name)
+        super().__init__(self.qr, name=name)
 
-        self.create_circuit(self.rel_qr, self.rel_cr)
+        self.create_circuit(self.rel_qr)
 
-    def set_regs(self, q_reg, c_reg):
+    def set_regs(self, q_reg):
         if q_reg is None:
             self.qr = QuantumRegister(self.num_qubits)
         else:
             self.qr = q_reg
 
-        if c_reg is None:
-            self.cr = ClassicalRegister(self.num_qubits)
-        else:
-            self.cr = c_reg
-
         self.rel_qr = MaskRegister(self.qr, mask=self.mask)
-        self.rel_cr = MaskRegister(self.cr, mask=self.mask)
 
     # TODO rename
     def mask_to_real(self, x):

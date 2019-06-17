@@ -8,9 +8,8 @@ setup(name='qchannels',
       license='',  # TODO
       packages=find_packages(exclude=['test*']),
       install_requires=[
-          'qiskit-terra==0.7.1',
-          'qiskit==0.7.0',
           'psutil>=5.4.7',
+          'qiskit==0.10.3',
           'nose',
           'sympy'
       ],

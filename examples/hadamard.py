@@ -12,7 +12,7 @@ import numpy as np
 class Hadamard(AbstractChannelCircuit):
     REL_SYSTEM_QUBITS = [0]  # It is require only one qubit
 
-    def create_circuit(self, q_regs, c_regs):
+    def create_circuit(self, q_regs):
         self.h(q_regs[0])
 
     @staticmethod
@@ -23,7 +23,7 @@ class Hadamard(AbstractChannelCircuit):
 
 parameters = set_parameters('Test Hadamard transformation')
 
-mask = {0: 3}  # It's optional. It change a qubit in channel, more detail in AbstractChannelCircuit
+mask = {0: 3}  # It's optional. It changes a qubit in channel, more details in AbstractChannelCircuit
 channel = Hadamard(backend_name=parameters['backend_name'], mask=mask)
 launcher = Launcher(token=parameters['token'], backend_name=parameters['backend_name'],
                     shots=parameters['shots'])

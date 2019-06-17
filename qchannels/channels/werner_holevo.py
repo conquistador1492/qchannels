@@ -19,7 +19,7 @@ class WernerHolevoCircuit(AbstractChannelCircuit):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def create_circuit(self, q_regs, c_regs):
+    def create_circuit(self, q_regs):
         self.x(q_regs[0])
         self.u2(0, 0, q_regs[1])
         self.u3(pi / 4, 0, 0, q_regs[2])  # maybe u1

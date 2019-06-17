@@ -6,5 +6,5 @@ class IdentityCircuit(AbstractChannelCircuit):
     def get_theory_channel():
         return lambda rho: rho
 
-    def create_circuit(self, q_regs, c_regs):
+    def create_circuit(self, q_regs):
         pass

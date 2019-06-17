@@ -41,7 +41,7 @@ class LandauStreaterCircuit(AbstractChannelCircuit):
     def get_theory_channel():
         return theory_landau_streater_channel
 
-    def create_circuit(self, q_regs, c_regs):
+    def create_circuit(self, q_regs):
         self.u2(pi, pi, q_regs[0])
         self.h(q_regs[3])
 

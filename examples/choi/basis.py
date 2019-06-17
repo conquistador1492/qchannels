@@ -2,7 +2,7 @@ from qchannels.channels.abstract import MaskRegister
 from qiskit import QuantumCircuit
 
 
-def preparation_full_set_of_qutrit_density_matrices(qr, cr, backend_name=None):
+def preparation_full_set_of_qutrit_density_matrices(qr, cr=None, backend_name=None):
     """
     It use 0 and 3rd qubit
     :param qr: QuantumRegister or MaskRegister
@@ -79,4 +79,7 @@ def preparation_full_set_of_qutrit_density_matrices(qr, cr, backend_name=None):
         ccr = cr.reg
     else:
         ccr = cr
-    return [variables[f"_rho{i}"](qr, cr, QuantumCircuit(qqr, ccr)) for i in range(9)]
+    if ccr is not None:
+        return [variables[f"_rho{i}"](qr, cr, QuantumCircuit(qqr, ccr)) for i in range(9)]
+    else:
+        return [variables[f"_rho{i}"](qr, cr, QuantumCircuit(qqr)) for i in range(9)]

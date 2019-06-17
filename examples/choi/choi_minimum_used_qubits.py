@@ -29,9 +29,7 @@ channel_class = parameters['channel_class']
 channel = channel_class(backend_name=parameters['backend_name'], mask=channel_mask)
 
 circuits = []
-for circuit in preparation_full_set_of_qutrit_density_matrices(
-    channel.rel_qr, channel.cr
-):
+for circuit in preparation_full_set_of_qutrit_density_matrices(channel.rel_qr):
     circuit += channel
     circuit.name = channel_class.__name__.lower() + '_' + circuit.name
     circuits.append(circuit)
