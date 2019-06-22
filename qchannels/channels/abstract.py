@@ -5,6 +5,8 @@ from qiskit.circuit.register import Register
 
 from qchannels.core.tools import LOCAL_SIMULATOR, BACKENDS, IBMQ_SIMULATOR
 
+from copy import deepcopy
+
 
 class MaskRegister:
     def __init__(self, reg: Register, mask=None):
@@ -59,9 +61,9 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
         else:
             raise Exception(f"We can't put CNOT here. {a[1], b[1]}")
 
-    def __init__(self, name=None, q_reg=None, c_reg=None, mask=None,
+    def __init__(self, name=None, qr=None, mask=None,
                  backend_name=LOCAL_SIMULATOR, num_qubits=None,
-                 rel_system_qubits=None, env_qubits=None, coupling_map=None):
+                 rel_system_qubits=None, rel_env_qubits=None, coupling_map=None):
         """
         :param mask: dict. Circuit for the channel can be defined for first qubits and
         changing a mask you can move channel on specific qubits. In the mask,
@@ -80,17 +82,17 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
         self.backend = backend
         self.mask = mask if mask is not None else {}
         self.rel_system_qubits = rel_system_qubits if rel_system_qubits is not None else self.REL_SYSTEM_QUBITS
-        self.rel_env_qubits = env_qubits if env_qubits is not None else self.REL_ENV_QUBITS
+        self.rel_env_qubits = rel_env_qubits if rel_env_qubits is not None else self.REL_ENV_QUBITS
         self.system_qubits = list(map(lambda x: self.mask.get(x, x), self.rel_system_qubits))
         self.env_qubits = list(map(lambda x: self.mask.get(x, x), self.rel_env_qubits))
 
         if num_qubits is not None:
             self.num_qubits = num_qubits
-        elif q_reg is not None:
-            if isinstance(q_reg, QuantumRegister):
-                self.num_qubits = q_reg.size
-            elif isinstance(q_reg, MaskRegister):
-                self.num_qubits = q_reg.reg.size
+        elif qr is not None:
+            if isinstance(qr, QuantumRegister):
+                self.num_qubits = qr.size
+            elif isinstance(qr, MaskRegister):
+                self.num_qubits = qr.reg.size
         elif self.backend not in BasicAer.backends() and self.backend.name() != IBMQ_SIMULATOR:
             self.num_qubits = self.backend.configuration().n_qubits
         else:
@@ -99,17 +101,19 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
         if self.mask != {} and max([*self.system_qubits, *self.env_qubits]) >= self.num_qubits:
             raise Exception(f"We can't use qubits over initialized(0 < x < {self.num_qubits})")
 
-        self.set_regs(q_reg)
+        self.set_regs(qr)
 
         super().__init__(self.qr, name=name)
 
         self.create_circuit(self.rel_qr)
 
-    def set_regs(self, q_reg):
-        if q_reg is None:
+    def set_regs(self, qr):
+        if qr is None:
             self.qr = QuantumRegister(self.num_qubits)
+        elif isinstance(qr, MaskRegister):
+            self.qr = qr.reg
         else:
-            self.qr = q_reg
+            self.qr = qr
 
         self.rel_qr = MaskRegister(self.qr, mask=self.mask)
 
@@ -143,3 +147,70 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
         Tensor product
         """
         raise NotImplementedError
+
+    def __iadd__(self, other):
+        if not isinstance(other, QuantumCircuit):
+            raise TypeError('Terms must be `QuantumCircuit`')
+
+        if self.qr != other.qregs[0]:
+            raise TypeError('The circuits have different quantum registers')
+
+        if other.cregs:
+            raise NotImplementedError("The circuits mustn't have classical registers")
+
+        self.data += other.data
+
+        if not isinstance(other, AbstractChannelCircuit):
+            used_qubits = list(set(map(lambda x: x[1], sum(map(lambda x: x[1], other.data), []))))
+
+            for qubit in used_qubits:
+                if qubit not in self.system_qubits:
+                    self.system_qubits.append(qubit)
+        else:
+            for key, value in other.mask.items():
+                if key not in self.mask:
+                    self.mask[key] = value
+
+            for qubit in other.rel_system_qubits:
+                if qubit not in self.rel_system_qubits and\
+                        self.mask.get(qubit, qubit) not in self.system_qubits:
+                    self.rel_system_qubits.append(qubit)
+                    self.system_qubits.append(self.mask.get(qubit, qubit))
+
+            for qubit in other.rel_env_qubits:
+                if qubit not in self.rel_env_qubits and \
+                                self.mask.get(qubit, qubit) not in self.env_qubits:
+                    self.rel_env_qubits.append(qubit)
+                    self.env_qubits.append(self.mask.get(qubit, qubit))
+
+            for qubit in other.system_qubits:
+                if qubit not in self.system_qubits:
+                    self.system_qubits.append(qubit)
+
+            for qubit in other.env_qubits:
+                if qubit not in self.env_qubits:
+                    self.env_qubits.append(qubit)
+
+            self.rel_qr = MaskRegister(self.qr, mask=self.mask)
+
+        # TODO
+        self.get_theory_channel = AbstractChannelCircuit.get_theory_channel
+        return self
+
+    def __add__(self, other):
+        first_term = deepcopy(self)
+        first_term += other
+        return first_term
+
+    def __radd__(self, other):
+        return circuit_to_channel(other) + self
+
+
+def circuit_to_channel(circuit: QuantumCircuit):
+    channel = type('QuantumChannelCircuit', (AbstractChannelCircuit, ), {
+        'create_circuit': (lambda self, rel_qr: None)
+    })(qr=circuit.qregs[0], rel_system_qubits=list(set(
+        map(lambda x: x[1], sum(map(lambda x: x[1], circuit.data), [])))
+    ))
+    channel.data = circuit.data
+    return channel
