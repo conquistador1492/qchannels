@@ -55,7 +55,7 @@ class AbstractChannelCircuit(ABC, QuantumCircuit):
             self.h(b)
             self.cx(b, a)
             self.h(a)
-            self.h(a)
+            self.h(b)
         else:
             raise Exception(f"We can't put CNOT here. {a[1], b[1]}")
 
