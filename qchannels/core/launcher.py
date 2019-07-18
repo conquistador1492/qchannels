@@ -104,7 +104,7 @@ class Launcher:
             if res is None:
                 res = new_res
             else:
-                res += new_res
+                res.results.extend(new_res.results)
 
         matrices = []
         for i in range(int(len(res.results) / number_measure_experiments)):
