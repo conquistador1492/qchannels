@@ -9,7 +9,7 @@ setup(name='qchannels',
       packages=find_packages(exclude=['test*']),
       install_requires=[
           'psutil>=5.4.7',
-          'qiskit==0.10.3',
+          'qiskit==0.11.1',
           'nose',
           'sympy'
       ],

@@ -1,5 +1,5 @@
 import numpy as np
-from qiskit import IBMQ, BasicAer
+from qiskit import BasicAer
 import sys
 
 np.set_printoptions(threshold=sys.maxsize)

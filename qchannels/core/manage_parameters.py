@@ -52,10 +52,10 @@ def set_parameters(description='Test Channels', parser_class=None, additional_ar
     else:
         token = tokens[args.num_token]
 
-    IBMQ.enable_account(token, **config)
+    provider = IBMQ.enable_account(token)
 
     global BACKENDS
-    BACKENDS += IBMQ.backends()
+    BACKENDS += provider.backends()
     if args.show_backends:
         for backend in BACKENDS:
             print(backend.name())
